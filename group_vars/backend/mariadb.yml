@@ -1,0 +1,56 @@
+---
+mariadb_version: 'mariadb-11.7'
+
+mariadb_cluster: '{{ groups["backend"] }}'
+
+mariadb_certs:
+  ca_path: /etc/mysql/mariadb_ca.crt
+  cert_path: /etc/mysql/mariadb.crt
+  key_path: /etc/mysql/mariadb.key
+  ca_content: '{{ lookup("ansible.builtin.file", mariadb_ca_cert_path) }}'
+  cert_content: '{{ lookup("ansible.builtin.file", mariadb_cert_path) }}'
+  key_content: '{{ lookup("ansible.builtin.file", mariadb_key_path) }}'
+
+mariadb_wsrep_provider_options:
+  - gmcast.listen_addr=tcp://{{ ip_address }}
+  - socket.ssl_ca={{ mariadb_certs.ca_path }}
+  - socket.ssl_cert={{ mariadb_certs.cert_path }}
+  - socket.ssl_key={{ mariadb_certs.key_path }}
+
+mariadb_config_default:
+  bind-address: '127.0.0.1'
+  expire_logs_days: 10
+  server_id: 0
+  gtid_domain_id: '{{ 998211615 +
+    mariadb_cluster.index(inventory_hostname) }}'
+  gtid_strict_mode: true
+  skip_name_resolve: true
+  wait_timeout: 60
+  log_bin: true
+  log_basename: mariadb
+  log_slave_updates: true
+  binlog_expire_logs_seconds: 604800
+  max_binlog_size: 1G
+  ssl_ca: '{{ mariadb_certs.ca_path }}'
+  ssl_cert: '{{ mariadb_certs.cert_path }}'
+  ssl_key: '{{ mariadb_certs.key_path }}'
+  wsrep_on: true
+  wsrep_provider: /usr/lib/libgalera_smm.so
+  wsrep_cluster_name: GLPI
+  wsrep_cluster_address: gcomm://{{ mariadb_cluster |
+    map("ansible.builtin.extract", hostvars, "ip_address") |
+    join(",") }}
+  wsrep_provider_options: '{{ mariadb_wsrep_provider_options | join(";") }}'
+  wsrep_node_address: '{{ ip_address }}'
+  wsrep_node_name: '{{ inventory_hostname }}'
+  wsrep_slave_threads: 4
+  wsrep_sst_method: mariabackup
+  wsrep_sst_auth: 'mysql:'
+  wsrep_gtid_mode: true
+  wsrep_gtid_domain_id: 998211614
+  binlog_format: ROW
+  default_storage_engine: InnoDB
+  innodb_doublewrite: true
+  innodb_flush_log_at_trx_commit: 0
+  innodb_autoinc_lock_mode: 2
+...

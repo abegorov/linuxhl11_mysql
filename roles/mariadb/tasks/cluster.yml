@@ -1,0 +1,14 @@
+---
+- name: Initialize mariadb cluster
+  ansible.builtin.shell:
+    cmd: |
+      set -eu
+      {% if inventory_hostname == mariadb_cluster | first %}
+      galera_new_cluster
+      {% else %}
+      systemctl restart mariadb.service
+      {% endif %}
+      sleep 30
+    creates: /var/lib/mysql/grastate.dat
+  when: mariadb_cluster
+...

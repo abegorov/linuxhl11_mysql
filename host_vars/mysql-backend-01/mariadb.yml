@@ -1,0 +1,8 @@
+---
+mariadb_databases_list: ['{{ glpi_db_name }}']
+
+mariadb_users_list:
+  - name: '{{ glpi_db_user }}'
+    password: '{{ glpi_db_password }}'
+    priv: '{{ glpi_db_name }}.*:ALL/mysql.time_zone_name:SELECT'
+...
